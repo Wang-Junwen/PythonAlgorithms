@@ -1,17 +1,14 @@
 """
 Author  : Alexander Pantyukhin
 Date    : October 14, 2022
-This is implementation Dynamic Programming up bottom approach
-to find edit distance.
-The aim is to demonstate up bottom approach for solving the task.
-The implementation was tested on the
-leetcode: https://leetcode.com/problems/edit-distance/
-"""
+This is an implementation of the up-bottom approach to find edit distance.
+The implementation was tested on Leetcode: https://leetcode.com/problems/edit-distance/
 
-"""
 Levinstein distance
 Dynamic Programming: up -> down.
 """
+
+import functools
 
 
 def min_distance_up_bottom(word1: str, word2: str) -> int:
@@ -25,18 +22,15 @@ def min_distance_up_bottom(word1: str, word2: str) -> int:
     >>> min_distance_up_bottom("zooicoarchaeologist", "zoologist")
     10
     """
-
-    from functools import lru_cache
-
     len_word1 = len(word1)
     len_word2 = len(word2)
 
-    @lru_cache(maxsize=None)
+    @functools.cache
     def min_distance(index1: int, index2: int) -> int:
-        # if first word index is overflow - delete all from the second word
+        # if first word index overflows - delete all from the second word
         if index1 >= len_word1:
             return len_word2 - index2
-        # if second word index is overflow - delete all from the first word
+        # if second word index overflows - delete all from the first word
         if index2 >= len_word2:
             return len_word1 - index1
         diff = int(word1[index1] != word2[index2])  # current letters not identical

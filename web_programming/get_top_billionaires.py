@@ -3,16 +3,23 @@ CAUTION: You may get a json.decoding error.
 This works for some of us but fails for others.
 """
 
-from datetime import datetime
+# /// script
+# requires-python = ">=3.13"
+# dependencies = [
+#     "httpx",
+#     "rich",
+# ]
+# ///
 
-import requests
+from datetime import UTC, date, datetime
+
+import httpx
 from rich import box
 from rich import console as rich_console
 from rich import table as rich_table
 
 LIMIT = 10
-TODAY = datetime.now()
-
+TODAY = datetime.now(tz=UTC)
 API_URL = (
     "https://www.forbes.com/forbesapi/person/rtb/0/position/true.json"
     "?fields=personName,gender,source,countryOfCitizenship,birthDate,finalWorth"
@@ -20,32 +27,45 @@ API_URL = (
 )
 
 
-def calculate_age(unix_date: int) -> str:
-    """Calculates age from given unix time format.
+def years_old(birth_timestamp: int, today: date | None = None) -> int:
+    """
+    Calculate the age in years based on the given birth date.  Only the year, month,
+    and day are used in the calculation.  The time of day is ignored.
+
+    Args:
+        birth_timestamp: The date of birth.
+        today: (useful for writing tests) or if None then datetime.date.today().
 
     Returns:
-        Age as string
+        int: The age in years.
 
-    >>> calculate_age(-657244800000)
-    '73'
-    >>> calculate_age(46915200000)
-    '51'
+    Examples:
+    >>> today = date(2024, 1, 12)
+    >>> years_old(birth_timestamp=datetime(1959, 11, 20).timestamp(), today=today)
+    64
+    >>> years_old(birth_timestamp=datetime(1970, 2, 13).timestamp(), today=today)
+    53
+    >>> all(
+    ...     years_old(datetime(today.year - i, 1, 12).timestamp(), today=today) == i
+    ...     for i in range(1, 111)
+    ... )
+    True
     """
-    birthdate = datetime.fromtimestamp(unix_date / 1000).date()
-    return str(
-        TODAY.year
-        - birthdate.year
-        - ((TODAY.month, TODAY.day) < (birthdate.month, birthdate.day))
+    today = today or TODAY.date()
+    birth_date = datetime.fromtimestamp(birth_timestamp, tz=UTC).date()
+    return (today.year - birth_date.year) - (
+        (today.month, today.day) < (birth_date.month, birth_date.day)
     )
 
 
-def get_forbes_real_time_billionaires() -> list[dict[str, str]]:
-    """Get top 10 realtime billionaires using forbes API.
+def get_forbes_real_time_billionaires() -> list[dict[str, int | str]]:
+    """
+    Get the top 10 real-time billionaires using Forbes API.
 
     Returns:
         List of top 10 realtime billionaires data.
     """
-    response_json = requests.get(API_URL).json()
+    response_json = httpx.get(API_URL, timeout=10).json()
     return [
         {
             "Name": person["personName"],
@@ -53,21 +73,22 @@ def get_forbes_real_time_billionaires() -> list[dict[str, str]]:
             "Country": person["countryOfCitizenship"],
             "Gender": person["gender"],
             "Worth ($)": f"{person['finalWorth'] / 1000:.1f} Billion",
-            "Age": calculate_age(person["birthDate"]),
+            "Age": str(years_old(person["birthDate"] / 1000)),
         }
         for person in response_json["personList"]["personsLists"]
     ]
 
 
-def display_billionaires(forbes_billionaires: list[dict[str, str]]) -> None:
-    """Display Forbes real time billionaires in a rich table.
+def display_billionaires(forbes_billionaires: list[dict[str, int | str]]) -> None:
+    """
+    Display Forbes real-time billionaires in a rich table.
 
     Args:
-        forbes_billionaires (list): Forbes top 10 real time billionaires
+        forbes_billionaires (list): Forbes top 10 real-time billionaires
     """
 
     table = rich_table.Table(
-        title=f"Forbes Top {LIMIT} Real Time Billionaires at {TODAY:%Y-%m-%d %H:%M}",
+        title=f"Forbes Top {LIMIT} Real-Time Billionaires at {TODAY:%Y-%m-%d %H:%M}",
         style="green",
         highlight=True,
         box=box.SQUARE,
@@ -82,4 +103,7 @@ def display_billionaires(forbes_billionaires: list[dict[str, str]]) -> None:
 
 
 if __name__ == "__main__":
+    from doctest import testmod
+
+    testmod()
     display_billionaires(get_forbes_real_time_billionaires())

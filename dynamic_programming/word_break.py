@@ -20,7 +20,7 @@ Runtime: O(n * n)
 Space: O(n)
 """
 
-from functools import lru_cache
+import functools
 from typing import Any
 
 
@@ -80,7 +80,7 @@ def word_break(string: str, words: list[str]) -> bool:
     len_string = len(string)
 
     # Dynamic programming method
-    @lru_cache(maxsize=None)
+    @functools.cache
     def is_breakable(index: int) -> bool:
         """
         >>> string = 'a'
@@ -90,7 +90,7 @@ def word_break(string: str, words: list[str]) -> bool:
         if index == len_string:
             return True
 
-        trie_node = trie
+        trie_node: Any = trie
         for i in range(index, len_string):
             trie_node = trie_node.get(string[i], None)
 

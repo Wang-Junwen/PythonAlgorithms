@@ -1,6 +1,7 @@
 """
 Algorithm that merges two sorted linked lists into one sorted linked list.
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
@@ -44,7 +45,7 @@ class SortedLinkedList:
         >>> len(SortedLinkedList(test_data_odd))
         8
         """
-        return len(tuple(iter(self)))
+        return sum(1 for _ in self)
 
     def __str__(self) -> str:
         """
